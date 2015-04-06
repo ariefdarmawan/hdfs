@@ -24,6 +24,25 @@ if es != nil {
 }
 ```
 
+### Put single file
+```
+err = h.Put("/users/ariefdarmawan/Temp/config.json", "/user/ariefdarmawan/inbox/temp/config.json", 0, map[string]string{"overwrite": "true"})
+```
+
+### Put multiple files
+```
+fmt.Println(">>>> TEST PUT FILE<<<<")
+es = h.Puts([]string{
+	"/users/ariefdarmawan/Temp/config.json",
+	"/users/ariefdarmawan/Temp/ecis_test.js",
+}, "/user/ariefdarmawan/inbox/temp/", 0, nil)
+if es != nil {
+	for k, v := range es {
+		t.Error(fmt.Sprintf("Error when write %v : %v \n", k, v))
+	}
+}
+```
+
 ### Read HDFS Status
 ```
 hdata, _ := h.List("/user/ariefdarmawan")
