@@ -24,7 +24,7 @@ func TestHdfs(t *testing.T) {
 		}
 	}
 
-	fmt.Println(">>>> TEST PUT FILE<<<<")
+	fmt.Println(">>>> TEST PUT FILES <<<<")
 	es = h.Puts([]string{
 		"/users/ariefdarmawan/Temp/config.json",
 		"/users/ariefdarmawan/Temp/ecis_test.js",

@@ -2,14 +2,50 @@ package hdfs
 
 import (
 	"errors"
-	//"io/ioutil"
-	//"os"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 )
 
-func (h *Hdfs) Get(path string) error {
+func (h *Hdfs) GetToLocal(path string, destination string, permission int) error {
+	d, err := h.Get(path)
+	if err != nil {
+		return err
+	}
+	if permission == 0 {
+		permission = 766
+	}
+	err = ioutil.WriteFile(destination, d, os.FileMode(permission))
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (h *Hdfs) Get(path string) ([]byte, error) {
+	r, err := h.call("GET", path, OP_OPEN, nil)
+	if err != nil {
+		return nil, err
+	}
+	if r.StatusCode != 307 {
+		return nil, errors.New("Invalid Response Header on OP_OPEN")
+	}
+
+	location := r.Header["Location"][0]
+	r, err = h.call("GET", location, OP_OPEN, nil)
+	if err != nil {
+		return nil, err
+	}
+	if r.StatusCode != 200 {
+		return nil, errors.New(r.Status)
+	}
+	d, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	return d, nil
 }
 
 func mergeMapString(source map[string]string, adds map[string]string) map[string]string {
