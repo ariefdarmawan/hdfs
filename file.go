@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
 )
 
 func (h *Hdfs) GetToLocal(path string, destination string, permission int) error {
@@ -90,18 +91,26 @@ func (h *Hdfs) Puts(paths []string, destinationFolder string, permission int, pa
 	if permission == 0 {
 		permission = 766
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(paths))
+
 	//parms = mergeMapString(parms, map[string]string{"permission": strconv.Itoa(permission)})
 	for _, path := range paths {
-		_, filename := filepath.Split(path)
-		newfilename := filepath.Join(destinationFolder, filename)
-		e := h.Put(path, newfilename, permission, parms)
-		if e != nil {
-			if es == nil {
-				es = make(map[string]error)
-				es[path] = e
+		go func(swg *sync.WaitGroup) {
+			defer swg.Done()
+			_, filename := filepath.Split(path)
+			newfilename := filepath.Join(destinationFolder, filename)
+			e := h.Put(path, newfilename, permission, parms)
+			if e != nil {
+				if es == nil {
+					es = make(map[string]error)
+					es[path] = e
+				}
 			}
-		}
+		}(&wg)
 	}
+	wg.Wait()
 	return es
 }
 
