@@ -2,22 +2,25 @@ package hdfs
 
 import (
 	"errors"
+	//"fmt"
 	"io/ioutil"
+	//"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
 )
 
-func (h *Hdfs) GetToLocal(path string, destination string, permission int) error {
+func (h *Hdfs) GetToLocal(path string, destination string, permission string) error {
 	d, err := h.Get(path)
 	if err != nil {
 		return err
 	}
-	if permission == 0 {
-		permission = 766
+	if permission == "" {
+		permission = "755"
 	}
-	err = ioutil.WriteFile(destination, d, os.FileMode(permission))
+	iperm, _ := strconv.Atoi(permission)
+	err = ioutil.WriteFile(destination, d, os.FileMode(iperm))
 	if err != nil {
 		return err
 	}
@@ -61,11 +64,11 @@ func mergeMapString(source map[string]string, adds map[string]string) map[string
 	return source
 }
 
-func (h *Hdfs) Put(localfile string, destination string, permission int, parms map[string]string) error {
-	if permission == 0 {
-		permission = 766
+func (h *Hdfs) Put(localfile string, destination string, permission string, parms map[string]string) error {
+	if permission == "" {
+		permission = "755"
 	}
-	parms = mergeMapString(parms, map[string]string{"permission": strconv.Itoa(permission)})
+	parms = mergeMapString(parms, map[string]string{"permission": permission})
 	r, err := h.call("PUT", destination, OP_CREATE, parms)
 	if err != nil {
 		return err
@@ -86,31 +89,53 @@ func (h *Hdfs) Put(localfile string, destination string, permission int, parms m
 	return nil
 }
 
-func (h *Hdfs) Puts(paths []string, destinationFolder string, permission int, parms map[string]string) map[string]error {
+func (h *Hdfs) Puts(paths []string, destinationFolder string, permission string, parms map[string]string) map[string]error {
 	var es map[string]error
-	if permission == 0 {
-		permission = 766
+	if permission == "" {
+		permission = "755"
 	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(len(paths))
+	fileCount := len(paths)
 
 	//parms = mergeMapString(parms, map[string]string{"permission": strconv.Itoa(permission)})
+	ipool := 0
+	iprocessing := 0
+	iread := 0
+	files := []string{}
 	for _, path := range paths {
-		go func(swg *sync.WaitGroup) {
-			defer swg.Done()
-			_, filename := filepath.Split(path)
-			newfilename := filepath.Join(destinationFolder, filename)
-			e := h.Put(path, newfilename, permission, parms)
-			if e != nil {
-				if es == nil {
-					es = make(map[string]error)
-					es[path] = e
-				}
+		ipool = ipool + 1
+		iread = iread + 1
+		files = append(files, path)
+		if ipool == h.Config.PoolSize || iread == fileCount {
+			wg := sync.WaitGroup{}
+			wg.Add(ipool)
+
+			for _, f := range files {
+				go func(path string, swg *sync.WaitGroup) {
+					defer swg.Done()
+					iprocessing = iprocessing + 1
+					_, filename := filepath.Split(path)
+					newfilename := filepath.Join(destinationFolder, filename)
+					e := h.Put(path, newfilename, permission, parms)
+					//var e error
+					if e != nil {
+						if es == nil {
+							es = make(map[string]error)
+							es[path] = e
+						}
+						//fmt.Println(path, "=> ", newfilename, " ... FAIL => ", e.Error(), " | Processing ", iprocessing, " of ", fileCount)
+					} else {
+						//fmt.Println(path, "=> ", newfilename, " ... SUCCESS | Processing ", iprocessing, " of ", fileCount)
+					}
+				}(f, &wg)
 			}
-		}(&wg)
+
+			wg.Wait()
+			ipool = 0
+			files = []string{}
+		}
 	}
-	wg.Wait()
+
 	return es
 }
 

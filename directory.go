@@ -3,7 +3,10 @@ package hdfs
 import (
 	//"encoding/json"
 	//"errors"
-	//"io/ioutil"
+	"io/ioutil"
+	//"os"
+	//"fmt"
+	"path/filepath"
 	"strconv"
 )
 
@@ -17,11 +20,11 @@ func (h *Hdfs) List(path string) (*HdfsData, error) {
 	return hdata, e
 }
 
-func (h *Hdfs) MakeDir(path string, permission int) error {
-	if permission == 0 {
-		permission = 766
+func (h *Hdfs) MakeDir(path string, permission string) error {
+	if permission == "" {
+		permission = "755"
 	}
-	r, e := h.call("PUT", path, OP_MKDIRS, map[string]string{"permission": strconv.Itoa(permission)})
+	r, e := h.call("PUT", path, OP_MKDIRS, map[string]string{"permission": permission})
 	if e != nil {
 		return e
 	}
@@ -29,9 +32,9 @@ func (h *Hdfs) MakeDir(path string, permission int) error {
 	return e
 }
 
-func (h *Hdfs) MakeDirs(paths []string, permission int) map[string]error {
-	if permission == 0 {
-		permission = 766
+func (h *Hdfs) MakeDirs(paths []string, permission string) map[string]error {
+	if permission == "" {
+		permission = "755"
 	}
 	var es map[string]error
 	for _, path := range paths {
@@ -44,6 +47,26 @@ func (h *Hdfs) MakeDirs(paths []string, permission int) map[string]error {
 		}
 	}
 	return es
+}
+
+func (h *Hdfs) PutDir(dirname string, destination string) (error, map[string]error) {
+	fileinfos, err := ioutil.ReadDir(dirname)
+	if err != nil {
+		return err, nil
+	}
+	filenames := []string{}
+	for _, fi := range fileinfos {
+		if fi.IsDir() == false {
+			filenames = append(filenames, filepath.Join(dirname, fi.Name()))
+		}
+	}
+
+	if len(filenames) > 0 {
+		es := h.Puts(filenames[:1000], destination, "755", nil)
+		return nil, es
+	}
+
+	return nil, nil
 }
 
 func (h *Hdfs) Rename(path string, destination string) error {
