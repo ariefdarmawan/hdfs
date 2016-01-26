@@ -62,7 +62,7 @@ func (h *Hdfs) PutDir(dirname string, destination string) (error, map[string]err
 	}
 
 	if len(filenames) > 0 {
-		es := h.Puts(filenames[:1000], destination, "755", nil)
+		es := h.Puts(filenames, destination, "755", nil)
 		return nil, es
 	}
 

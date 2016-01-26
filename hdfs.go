@@ -41,6 +41,8 @@ const (
 type HdfsConfig struct {
 	Host     string
 	UserId   string
+	Password string
+	Method   string
 	TimeOut  time.Duration
 	PoolSize int
 }
@@ -62,7 +64,7 @@ func NewHdfsConfig(host, userid string) *HdfsConfig {
 		}
 	}
 	cfg.UserId = userid
-	cfg.PoolSize = 10
+	cfg.PoolSize = 5
 	return &cfg
 }
 

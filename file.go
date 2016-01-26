@@ -140,7 +140,7 @@ func (h *Hdfs) Puts(paths []string, destinationFolder string, permission string,
 }
 
 func (h *Hdfs) Append(localfile string, destination string) error {
-	r, err := h.call("PUT", destination, OP_APPEND, nil)
+	r, err := h.call("POST", destination, OP_APPEND, nil)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (h *Hdfs) Append(localfile string, destination string) error {
 
 	location := r.Header["Location"][0]
 
-	r, err = h.callPayload("PUT", location, OP_APPEND, localfile, nil)
+	r, err = h.callPayload("POST", location, OP_APPEND, localfile, nil)
 	if err != nil {
 		return err
 	}
