@@ -42,6 +42,7 @@ type HdfsConfig struct {
 	Host     string
 	UserId   string
 	Password string
+	Token    string
 	Method   string
 	TimeOut  time.Duration
 	PoolSize int
