@@ -33,7 +33,7 @@ func (h *Hdfs) Get(path string) ([]byte, error) {
 		return nil, err
 	}
 	if r.StatusCode != 307 {
-		return nil, errors.New("Invalid Response Header on OP_OPEN")
+		return nil, errors.New("Invalid Response Header on OP_OPEN: " + r.Status)
 	}
 
 	location := r.Header["Location"][0]
@@ -74,7 +74,7 @@ func (h *Hdfs) Put(localfile string, destination string, permission string, parm
 		return err
 	}
 	if r.StatusCode != 307 {
-		return errors.New("Invalid Response Header on OP_CREATE")
+		return errors.New("Invalid Response Header on OP_CREATE: " + r.Status)
 	}
 
 	location := r.Header["Location"][0]
@@ -145,7 +145,7 @@ func (h *Hdfs) Append(localfile string, destination string) error {
 		return err
 	}
 	if r.StatusCode != 307 {
-		return errors.New("Invalid Response Header on OP_APPEND")
+		return errors.New("Invalid Response Header on OP_APPEND: " + r.Status)
 	}
 
 	location := r.Header["Location"][0]
@@ -160,7 +160,21 @@ func (h *Hdfs) Append(localfile string, destination string) error {
 	return nil
 }
 
-func (h *Hdfs) SetOwner(path string, user string) error {
+func (h *Hdfs) SetOwner(path string, owner string, group string) error {
+	ownerInfo := map[string]string{}
+	if owner != "" {
+		ownerInfo["owner"] = owner
+	}
+	if group != "" {
+		ownerInfo["group"] = group
+	}
+	r, e := h.call("PUT", path, OP_SETOWNER, ownerInfo)
+	if e != nil {
+		return e
+	}
+	if r.StatusCode != 200 {
+		return errors.New("Invalid Response Header on OP_SETOWNER: " + r.Status)
+	}
 	return nil
 }
 

@@ -17,6 +17,11 @@ func TestHdfs(t *testing.T) {
 		t.Error(e.Error())
 	}
 
+	fmt.Println(">>>> TEST CHANGE OWNER <<<<")
+	if e = h.SetOwner("/user/ariefdarmawan", "ariefdarmawan", ""); e != nil {
+		t.Error(e.Error())
+	}
+
 	fmt.Println(">>>> TEST CREATE DIR <<<<")
 	es := h.MakeDirs([]string{"/user/ariefdarmawan/inbox", "/user/ariefdarmawan/temp", "/user/ariefdarmawan/outbox"}, "")
 	if es != nil {
