@@ -17,17 +17,17 @@ func TestHdfs(t *testing.T) {
 		t.Error(e.Error())
 	}
 
-	fmt.Println(">>>> TEST CHANGE OWNER <<<<")
-	if e = h.SetOwner("/user/ariefdarmawan", "ariefdarmawan", ""); e != nil {
-		t.Error(e.Error())
-	}
-
 	fmt.Println(">>>> TEST CREATE DIR <<<<")
 	es := h.MakeDirs([]string{"/user/ariefdarmawan/inbox", "/user/ariefdarmawan/temp", "/user/ariefdarmawan/outbox"}, "")
 	if es != nil {
 		for k, v := range es {
 			t.Error(fmt.Sprintf("Error when create %v : %v \n", k, v))
 		}
+	}
+
+	fmt.Println(">>>> TEST CHANGE OWNER <<<<")
+	if e = h.SetOwner("/user/ariefdarmawan", "ariefdarmawan", ""); e != nil {
+		t.Error(e.Error())
 	}
 
 	/*
