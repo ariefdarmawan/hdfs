@@ -8,7 +8,7 @@ import (
 func TestHdfs(t *testing.T) {
 	h, e := NewHdfs(NewHdfsConfig("http://awshdc01:50070", "hdfs"))
 	if e != nil {
-		t.Error(e.Error())
+		t.Fatalf(e.Error())
 	}
 	h.Config.PoolSize = 100
 
