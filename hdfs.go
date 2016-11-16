@@ -36,6 +36,8 @@ const (
 	OP_GETDELEGATIONTOKENS   = "GETDELEGATIONTOKENS"
 	OP_RENEWDELEGATIONTOKEN  = "RENEWDELEGATIONTOKEN"
 	OP_CANCELDELEGATIONTOKEN = "CANCELDELEGATIONTOKEN"
+	MAX_IDLE_CONNECTIONS     = 100
+	REQUEST_TIMEOUT          = 25
 )
 
 type HdfsConfig struct {
@@ -75,6 +77,7 @@ func NewHdfs(config *HdfsConfig) (*Hdfs, error) {
 
 	hdfs.client = &http.Client{
 		Transport: &http.Transport{
+			MaxIdleConnsPerHost: MAX_IDLE_CONNECTIONS,
 			Dial: func(netw, addr string) (net.Conn, error) {
 				c, err := net.DialTimeout(netw, addr, config.TimeOut)
 				if err != nil {
@@ -83,6 +86,7 @@ func NewHdfs(config *HdfsConfig) (*Hdfs, error) {
 				return c, nil
 			},
 		},
+		Timeout: time.Duration(REQUEST_TIMEOUT) * time.Second,
 	}
 	return hdfs, nil
 }
@@ -117,6 +121,7 @@ func (h *Hdfs) call(calltype, path, op string, parms map[string]string) (*http.R
 	if err != nil {
 		return nil, err
 	}
+
 	return h.client.Do(req)
 }
 
@@ -138,6 +143,9 @@ func (h *Hdfs) callPayload(calltype, path, op string, filename string, parms map
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Add("Content-Type", "application/octet-stream")
+
 	return h.client.Do(req)
 }
 

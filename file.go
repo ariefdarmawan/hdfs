@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"net/http"
 )
 
 func (h *Hdfs) GetToLocal(path string, destination string, permission string) error {
@@ -32,16 +33,21 @@ func (h *Hdfs) Get(path string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if r.StatusCode != 307 {
+
+	location := path
+	if r.StatusCode == http.StatusTemporaryRedirect {
+		location = r.Header["Location"][0]
+	} else if r.StatusCode == http.StatusOK {
+		//no-op: path is correct
+	} else {
 		return nil, errors.New("Invalid Response Header on OP_OPEN: " + r.Status)
 	}
 
-	location := r.Header["Location"][0]
 	r, err = h.call("GET", location, OP_OPEN, nil)
 	if err != nil {
 		return nil, err
 	}
-	if r.StatusCode != 200 {
+	if r.StatusCode != http.StatusOK {
 		return nil, errors.New(r.Status)
 	}
 	d, err := ioutil.ReadAll(r.Body)
